@@ -98,7 +98,7 @@ while j < len(t):
 	j = j + 1
 
 
-print(bcolors.OKCYAN + "\nAutres pages trouvÃ©es:" + bcolors.ENDC)
+print(bcolors.OKCYAN + "\nOther pages found:" + bcolors.ENDC)
 
 with open("content.txt", "r") as content:
 	for line in content:
