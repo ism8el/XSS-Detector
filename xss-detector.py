@@ -23,7 +23,7 @@ except IndexError:
 	exit()
 
 
-cookie = input("Enter cookies like this: {'PHPSESSID':'1841ed304c0911ed9609c'} (press ENTER for nothing): ")
+cookie = input(bcolors.OKCYAN + "Enter cookies like this: {'PHPSESSID':'1841ed304c0911ed9609c', 'lang':'fr'} (press ENTER for nothing): " + bcolors.ENDC)
 try:
 	cookie
 	cookie = ast.literal_eval(cookie)
