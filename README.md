@@ -20,3 +20,5 @@ or
 > python3 xss-detector.py http://example.fr
 
 ## Example:
+![Command prompt](demo1.JPG)
+![Result](demo2.JPG)
