@@ -30,6 +30,13 @@ try:
 except SyntaxError:
 	cookie = {}
 
+UA = input(bcolors.OKCYAN + "Enter User-Agent (press ENTER for default): " + bcolors.ENDC)
+try:
+	UA
+except SyntaxError:
+	UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"
+
+
 url = sys.argv[1]
 t = []
 o = []
@@ -40,7 +47,7 @@ j = 0
 
 print(bcolors.OKCYAN + "Parameters found:" + bcolors.ENDC)
 
-resp = requests.get(url, cookies=cookie, headers = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36'})
+resp = requests.get(url, cookies=cookie, headers = { 'User-Agent': UA})
 path = resp.url
 
 with open("content.txt", "w") as content:
@@ -70,7 +77,7 @@ with open("content.txt", "r") as content:
 print(bcolors.OKCYAN + "\nParameter test with GET:" + bcolors.ENDC)
 
 while i < len(t):
-	get = requests.get(url, params={t[int(i)]: '<h1>f11a2gfa4erg1</h1>'}, cookies=cookie, headers = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36'})
+	get = requests.get(url, params={t[int(i)]: '<h1>f11a2gfa4erg1</h1>'}, cookies=cookie, headers = { 'User-Agent': UA})
 
 	if '<h1>f11a2gfa4erg1</h1>' in get.text:
 		if t[int(i)] is not None:
@@ -85,7 +92,7 @@ while i < len(t):
 print(bcolors.OKCYAN + "\nParameter test with POST:" + bcolors.ENDC)
 
 while j < len(t):
-	post = requests.post(url, data={t[int(j)]: '<h1>f11a2gfa4erg1</h1>'}, cookies=cookie, headers = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36'})
+	post = requests.post(url, data={t[int(j)]: '<h1>f11a2gfa4erg1</h1>'}, cookies=cookie, headers = { 'User-Agent': UA})
 
 	if '<h1>f11a2gfa4erg1</h1>' in post.text:
 		if t[int(j)] is not None:
@@ -103,7 +110,7 @@ print(bcolors.OKCYAN + "\nOther pages found:" + bcolors.ENDC)
 with open("content.txt", "r") as content:
 	for line in content:
 		for word in line.split():
-			if ".html" in word or ".7z" in word or "#" in word or ".png" in word or ".jpg" in word or ".svg" in word or ".jpeg" in word or ".ico" in word or ".css" in word or ".js" in word or ".zip" in word or ".pdf" in word or ".txt" in word or ".gif" in word or ".JPEG" in word or ".PNG" in word or ".JPG" in word:
+			if "@" in word or "mailto" in word or ".html" in word or ".7z" in word or "#" in word or ".png" in word or ".jpg" in word or ".svg" in word or ".jpeg" in word or ".ico" in word or ".css" in word or ".js" in word or ".zip" in word or ".pdf" in word or ".txt" in word or ".gif" in word or ".JPEG" in word or ".PNG" in word or ".JPG" in word:
 				pass
 			else:
 				if 'href="' in word:
@@ -176,7 +183,7 @@ while x < len(o):
 	else:
 		new_url = path + o[x]
 
-	resp = requests.get(new_url, cookies=cookie, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36'})
+	resp = requests.get(new_url, cookies=cookie, headers={'User-Agent': UA})
 
 	with open("content.txt", "w") as content:
 		content.write(resp.text)
@@ -205,7 +212,7 @@ while x < len(o):
 	print(bcolors.OKCYAN + "\nParameter test with GET on:", new_url + bcolors.ENDC)
 
 	while i < len(t):
-		get = requests.get(new_url, params={t[int(i)]: '<h1>f11a2gfa4erg1</h1>'}, cookies=cookie, headers = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36'})
+		get = requests.get(new_url, params={t[int(i)]: '<h1>f11a2gfa4erg1</h1>'}, cookies=cookie, headers = { 'User-Agent': UA})
 
 		if '<h1>f11a2gfa4erg1</h1>' in get.text:
 			if t[int(i)] is not None:
@@ -222,7 +229,7 @@ while x < len(o):
 	print(bcolors.OKCYAN + "\nParameter test with POST on: " + new_url + bcolors.ENDC)
 
 	while j < len(t):
-		post = requests.post(new_url, data={t[int(j)]: '<h1>f11a2gfa4erg1</h1>'}, cookies=cookie, headers = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36'})
+		post = requests.post(new_url, data={t[int(j)]: '<h1>f11a2gfa4erg1</h1>'}, cookies=cookie, headers = { 'User-Agent': UA})
 
 		if '<h1>f11a2gfa4erg1</h1>' in post.text:
 			if t[int(j)] is not None:
