@@ -19,6 +19,5 @@ or
 > chmod + x xss-detector.py\
 > python3 xss-detector.py http://example.fr
 
-## Example:
-![Command prompt](demo1.JPG)
-![Result](demo2.JPG)
+## Screenshots:
+![Command prompt](banner.png)
