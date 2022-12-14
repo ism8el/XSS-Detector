@@ -1,9 +1,13 @@
 #!/usr/bin/python3
 
 import requests
-import sys
 import re
+import sys
 import ast
+import urllib3
+import random
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class bcolors:
     HEADER = '\033[95m'
@@ -16,46 +20,90 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+def color(image):
+	new_image = ""
+	for char in image:
+		if char == "═" or char == "║" or char == "╝" or char == "╚" or char == "╗" or char == "╔":
+			new_image = new_image + bcolors.FAIL + char
+		else:
+			new_image = new_image + bcolors.WARNING + char
+	return new_image
+
+image = """\n\n
+██╗  ██╗███████╗███████╗          ██████╗ ███████╗████████╗███████╗ ██████╗████████╗ ██████╗ ██████╗ 
+╚██╗██╔╝██╔════╝██╔════╝          ██╔══██╗██╔════╝╚══██╔══╝██╔════╝██╔════╝╚══██╔══╝██╔═══██╗██╔══██╗
+ ╚███╔╝ ███████╗███████╗  █████╗  ██║  ██║█████╗     ██║   █████╗  ██║        ██║   ██║   ██║██████╔╝
+ ██╔██╗ ╚════██║╚════██║  ╚════╝  ██║  ██║██╔══╝     ██║   ██╔══╝  ██║        ██║   ██║   ██║██╔══██╗
+██╔╝ ██╗███████║███████║          ██████╔╝███████╗   ██║   ███████╗╚██████╗   ██║   ╚██████╔╝██║  ██║
+╚═╝  ╚═╝╚══════╝╚══════╝          ╚═════╝ ╚══════╝   ╚═╝   ╚══════╝ ╚═════╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝"""
+
+print(color(image))
+
+
 try:
 	sys.argv[1]
 except IndexError:
-	print(bcolors.WARNING + "\nUsage: python3 xss-detector.py <url_to_test> (Ex: python3 xss-detector.py http://example.fr/)\n" + bcolors.ENDC)
+	print(bcolors.WARNING + "\nUsage: python3 web-enum.py <url_to_test> (Ex: python3 web-enum.py http://example.fr/ all)\n" + bcolors.ENDC)
 	exit()
 
+try:
+	sys.argv[2]
+	if sys.argv[2] == "all":
+		all = 1
+except IndexError:
+	all = 0
 
-cookie = input(bcolors.OKCYAN + "Enter cookies like this: {'PHPSESSID':'1841ed304c0911ed9609c', 'lang':'fr'} (press ENTER for nothing): " + bcolors.ENDC)
+cookie = input(bcolors.BOLD + bcolors.OKBLUE + "\nEnter cookies like this: {'PHPSESSID':'1841ed304c0911ed9609c', 'lang':'fr'} (press ENTER for nothing): " + bcolors.ENDC)
 try:
 	cookie
 	cookie = ast.literal_eval(cookie)
 except SyntaxError:
 	cookie = {}
 
-UA = input(bcolors.OKCYAN + "Enter User-Agent (press ENTER for default): " + bcolors.ENDC)
+useragent = input(bcolors.BOLD + bcolors.OKBLUE + "\nEnter your custom User-Agent (press ENTER for default): " + bcolors.ENDC)
 try:
-	UA
+	useragent
 except SyntaxError:
-	UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"
+	useragent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"
 
 
 url = sys.argv[1]
-t = []
 o = []
 gg = []
 
-i = 0
-j = 0
-
-print(bcolors.OKCYAN + "Parameters found:" + bcolors.ENDC)
-
-resp = requests.get(url, cookies=cookie, headers = { 'User-Agent': UA})
-path = resp.url
-
-with open("content.txt", "w") as content:
-	content.write(resp.text)
+if str(url[-1]) == "/":
+	url = url.rsplit("/", 1)[0]
 
 
-with open("content.txt", "r") as content:
-	for line in content:
+try:
+	test = requests.get(url, timeout=10, cookies=cookie, verify=False, headers = { "User-Agent": useragent})
+except:
+	print(bcolors.FAIL + "\nFailed to establish connection with ", url + bcolors.ENDC)
+	exit()
+
+def path(url, strict):
+	if "http://" in url:
+		url = url.replace('http://', '')
+		pre = "http://"
+	if "https://" in url:
+		url = url.replace('https://', '')
+		pre = "https://"
+	if strict == 1:
+		url = url.split("/", 1)[0]
+		return url
+	elif strict == 2:
+		url = url.rsplit("/", 1)[0]
+		return pre + url + "/"
+	elif strict == 0:
+		url = url.split("/", 1)[0]
+		return pre + url + "/"
+
+
+def xss(url):
+	t = []
+	resp = requests.get(url, cookies=cookie, headers = { 'User-Agent': useragent})
+
+	for line in resp.text.splitlines():
 		if ("name=" in line and "input" in line) or ("name=" in line and "select" in line) or ("name=" in line and "option" in line) or ("name=" in line and "textarea" in line) or ("name=" in line and "button" in line):
 			for word in line.split():
 				if 'name="' in word:
@@ -64,205 +112,116 @@ with open("content.txt", "r") as content:
 					except AttributeError:
 						laver = re.search('name="(.*)"', word)
 					t.append(laver)
-					print(laver)
 				if "name='" in word:
 					try:
 						laver = re.search("name='(.*)'", word).group(1)
 					except AttributeError:
 						laver = re.search("name='(.*)'", word)
 					t.append(laver)
-					print(laver)
+	if len(t) != 0:
+		print(bcolors.OKCYAN + "\nParameters found on: " + url + bcolors.ENDC)
+		for find in t:
+			print(find)
 
+	if len(t) != 0:
+		print(bcolors.OKCYAN + "\nXSS attack with GET method (" + url + "):" + bcolors.ENDC)
 
-print(bcolors.OKCYAN + "\nParameter test with GET:" + bcolors.ENDC)
-
-while i < len(t):
-	get = requests.get(url, params={t[int(i)]: '<h1>f11a2gfa4erg1</h1>'}, cookies=cookie, headers = { 'User-Agent': UA})
-
-	if '<h1>f11a2gfa4erg1</h1>' in get.text:
-		if t[int(i)] is not None:
-			print(bcolors.OKGREEN + "Vulnerable '" + t[int(i)] + "' parameters with method GET" + bcolors.ENDC)
-			gg.append(bcolors.OKGREEN + "Vulnerable '" + t[int(i)] + "' parameters with method GET" + bcolors.ENDC)
-	else:
-		if t[int(i)] is not None:
-			print(bcolors.FAIL + "Vulnerable '" + t[int(i)] + "' parameters with method GET" + bcolors.ENDC)
-	i = i + 1
-
-
-print(bcolors.OKCYAN + "\nParameter test with POST:" + bcolors.ENDC)
-
-while j < len(t):
-	post = requests.post(url, data={t[int(j)]: '<h1>f11a2gfa4erg1</h1>'}, cookies=cookie, headers = { 'User-Agent': UA})
-
-	if '<h1>f11a2gfa4erg1</h1>' in post.text:
-		if t[int(j)] is not None:
-			print(bcolors.OKGREEN + "Vulnerable '" + t[int(j)] + "' parameters with method POST" + bcolors.ENDC)
-			gg.append(bcolors.OKGREEN + "Vulnerable '" + t[int(j)] + "' parameters with method POST" + bcolors.ENDC)
-	else:
-		if t[int(j)] is not None:
-			print(bcolors.FAIL + "Vulnerable '" + t[int(j)] + "' parameters with method POST" + bcolors.ENDC)
-
-	j = j + 1
-
-
-print(bcolors.OKCYAN + "\nOther pages found:" + bcolors.ENDC)
-
-with open("content.txt", "r") as content:
-	for line in content:
-		for word in line.split():
-			if "@" in word or "mailto" in word or ".html" in word or ".7z" in word or "#" in word or ".png" in word or ".jpg" in word or ".svg" in word or ".jpeg" in word or ".ico" in word or ".css" in word or ".js" in word or ".zip" in word or ".pdf" in word or ".txt" in word or ".gif" in word or ".JPEG" in word or ".PNG" in word or ".JPG" in word:
-				pass
-			else:
-				if 'href="' in word:
-					try:
-						new_url = re.search('href="(.*)"', word).group(1)
-					except AttributeError:
-						new_url = re.search('href="(.*)"', word)
-					o.append(new_url)
-					print(bcolors.WARNING + "find: " + new_url + bcolors.ENDC)
-				if "href='" in word:
-					try:
-						new_url = re.search("href='(.*)'", word).group(1)
-					except AttributeError:
-						new_url = re.search("href='(.*)'", word)
-					o.append(new_url)
-					print(bcolors.WARNING + "find: " + new_url + bcolors.ENDC)
-				if "src='" in word:
-					try:
-						new_url = re.search("src='(.*)'", word).group(1)
-					except AttributeError:
-						new_url = re.search("src='(.*)'", word)
-					o.append(new_url)
-					print(bcolors.WARNING + "find: " + new_url + bcolors.ENDC)
-				if 'src="' in word:
-					try:
-						new_url = re.search('src="(.*)"', word).group(1)
-					except AttributeError:
-						new_url = re.search('src="(.*)"', word)
-					o.append(new_url)
-					print(bcolors.WARNING + "find: " + new_url + bcolors.ENDC)
-				if "action='" in word:
-					try:
-						new_url = re.search("action='(.*)'", word).group(1)
-					except AttributeError:
-						new_url = re.search("action='(.*)'", word)
-					o.append(new_url)
-					print(bcolors.WARNING + "find: " + new_url + bcolors.ENDC)
-				if 'action="' in word:
-					try:
-						new_url = re.search('action="(.*)"', word).group(1)
-					except AttributeError:
-						new_url = re.search('action="(.*)"', word)
-					o.append(new_url)
-					print(bcolors.WARNING + "find: " + new_url + bcolors.ENDC)
-				if "iframe='" in word:
-					try:
-						new_url = re.search("iframe='(.*)'", word).group(1)
-					except AttributeError:
-						new_url = re.search("iframe='(.*)'", word)
-					o.append(new_url)
-					print(bcolors.WARNING + "find: " + new_url + bcolors.ENDC)
-				if 'iframe="' in word:
-					try:
-						new_url = re.search('iframe="(.*)"', word).group(1)
-					except AttributeError:
-						new_url = re.search('iframe="(.*)"', word)
-					o.append(new_url)
-					print(bcolors.WARNING + "find: " + new_url + bcolors.ENDC)
-x=0
-
-while x < len(o):
-	print("\n---------------------------------------------------------------------")
-	t = []
-	i = 0
-	j = 0
-	
-	new_url = o[x]
-	if "http" in new_url:
-		new_url = o[x]
-	else:
-		new_url = path + o[x]
-
-	resp = requests.get(new_url, cookies=cookie, headers={'User-Agent': UA})
-
-	with open("content.txt", "w") as content:
-		content.write(resp.text)
-
-	print(bcolors.OKCYAN + "\nParameters found on", new_url + bcolors.ENDC)
-
-	with open("content.txt", "r") as content:
-		for line in content:
-			if ("name=" in line and "input" in line) or ("name=" in line and "select" in line) or ("name=" in line and "option" in line) or ("name=" in line and "textarea" in line) or ("name=" in line and "button" in line):
-				for word in line.split():
-					if 'name="' in word:
-						try:
-							laver = re.search('name="(.*)"', word).group(1)
-						except AttributeError:
-							laver = re.search('name="(.*)"', word)
-						t.append(laver)
-						print(laver)
-					if "name='" in word:
-						try:
-							laver = re.search("name='(.*)'", word).group(1)
-						except AttributeError:
-							laver = re.search("name='(.*)'", word)
-						t.append(laver)
-						print(laver)
-
-	print(bcolors.OKCYAN + "\nParameter test with GET on:", new_url + bcolors.ENDC)
-
-	while i < len(t):
-		get = requests.get(new_url, params={t[int(i)]: '<h1>f11a2gfa4erg1</h1>'}, cookies=cookie, headers = { 'User-Agent': UA})
+	for param in t:
+		get = requests.get(url, params={param: '<h1>f11a2gfa4erg1</h1>'}, cookies=cookie, headers = { 'User-Agent': useragent})
 
 		if '<h1>f11a2gfa4erg1</h1>' in get.text:
-			if t[int(i)] is not None:
-				print(bcolors.OKGREEN + "Vulnerable '" + t[int(i)] + "' parameters with method GET" + bcolors.ENDC)
-				gg.append(bcolors.OKGREEN + "Vulnerable '" + t[int(j)] + "' parameters with method POST on " + new_url + bcolors.ENDC)
-
+			if param is not None:
+				print(bcolors.OKGREEN + "Vulnerable '" + param + "' parameters with method GET" + bcolors.ENDC)
+				gg.append(bcolors.OKGREEN + "Vulnerable '" + param + "' parameters with method GET on: " + url + bcolors.ENDC)
 		else:
-			if t[int(i)] is not None:
-				print(bcolors.FAIL + "Vulnerable '" + t[int(i)] + "' parameters with method GET" + bcolors.ENDC)
+			if param is not None:
+				print(bcolors.FAIL + "Vulnerable '" + param + "' parameters with method GET on: " + url + bcolors.ENDC)
 
-		i = i + 1
+	if len(t) != 0:
+		print(bcolors.OKCYAN + "\nXSS attack with POST method (" + url + "):" + bcolors.ENDC)
 
-
-	print(bcolors.OKCYAN + "\nParameter test with POST on: " + new_url + bcolors.ENDC)
-
-	while j < len(t):
-		post = requests.post(new_url, data={t[int(j)]: '<h1>f11a2gfa4erg1</h1>'}, cookies=cookie, headers = { 'User-Agent': UA})
+	for param in t:
+		post = requests.post(url, data={param: '<h1>f11a2gfa4erg1</h1>'}, cookies=cookie, headers = { 'User-Agent': useragent})
 
 		if '<h1>f11a2gfa4erg1</h1>' in post.text:
-			if t[int(j)] is not None:
-				print(bcolors.OKGREEN + "Vulnerable '" + t[int(j)] + "' parameters with method POST" + bcolors.ENDC)
-				gg.append(bcolors.OKGREEN + "Vulnerable '" + t[int(j)] + "' parameters with method POST on " + new_url + bcolors.ENDC)
+			if param is not None:
+				print(bcolors.OKGREEN + "Vulnerable '" + param + "' parameters with method POST" + bcolors.ENDC)
+				gg.append(bcolors.OKGREEN + "Vulnerable '" + param + "' parameters with method POST on: " + url+ bcolors.ENDC)
 		else:
-			if t[int(j)] is not None:
-				print(bcolors.FAIL + "Vunerable '" + t[int(j)] + "' parameters with method POST" + bcolors.ENDC)
+			if param is not None:
+				print(bcolors.FAIL + "Vulnerable '" + param + "' parameters with method POST on: " + url + bcolors.ENDC)
 
-		j = j + 1
-	x = x + 1
 
-print("\n---------------------------------------------------------------------")
-print(bcolors.OKCYAN + "\nSummary of faults found:" + bcolors.ENDC)
+print(bcolors.OKCYAN + "\n----------------------------------------" + bcolors.ENDC)
+print(bcolors.UNDERLINE + bcolors.BOLD + bcolors.FAIL + "\nURL found:" + bcolors.ENDC)
+
+
+def add(balise, quote, word):
+	if balise in word:
+		try:
+			new_url = re.search(balise + '(.*)' + quote, word).group(1)
+		except AttributeError:
+			new_url = re.search(balise + '(.*)' + quote, word)
+		try:
+			new_url = new_url.split("?", 1)[0]
+			new_url = new_url.split("#",  1)[0]
+		except:
+			pass
+		if 'http' not in new_url:
+			try: 
+				if new_url[0] == "." and new_url[1] == "/":
+					new_url = path(url, 2) + new_url.replace('./', '')
+				elif new_url[0] == "/":
+					new_url = path(url, 0) + new_url
+				else:
+					new_url = path(url, 2) + new_url
+			except:
+				pass
+		if new_url not in o and path(url, 1) == path(new_url, 1):
+			o.append(new_url)
+			print(bcolors.WARNING + "find: " + new_url.replace('//', '/') + bcolors.ENDC)
+		elif path(url, 1) != path(new_url, 1):
+			print(bcolors.FAIL + "Ignore: " + new_url.replace('//', '/') + " (not the same site)" + bcolors.ENDC)	
+		elif new_url  in o:
+			print(bcolors.FAIL + "Ignore: " + new_url.replace('//', '/') + " (alredy found)" + bcolors.ENDC)			
+
+
+
+def discover(url, ):
+	try:
+		resp = requests.get(url, timeout=10, cookies=cookie, verify=False, headers = { "User-Agent": useragent})
+		content = resp.text
+
+		for line in content.split():
+			for word in line.split():
+				try:
+					if all != 1 and ("@" in word or "mailto" in word or ".html" in word or ".7z" in word or "#" in word or ".png" in word or ".jpg" in word or ".svg" in word or ".jpeg" in word or ".ico" in word or ".css" in word or ".js" in word or ".zip" in word or ".pdf" in word or ".txt" in word or ".gif" in word or ".JPEG" in word or ".PNG" in word or ".JPG" in word):
+						pass
+					else:
+						add('href="', '"', word)
+						add("href='", "'", word)
+						add("src='", "'", word)
+						add('src="', '"', word)
+						add("action='", "'", word)
+						add('action="', '"', word)
+						add("iframe='", "'", word)
+						add('iframe="', '"', word)
+				except TypeError:
+					pass
+	except requests.exceptions.ConnectTimeout:
+		pass
+
+
+discover(url)
+xss(url)
+
 y=0
-while y < len(gg):
-	print(gg[y])
-	y = y + 1
+for url in o:
+	discover(url)
+	xss(url)
 
-if y == 0:
-	print(bcolors.FAIL + "\nNo XSS flaws found :(" + bcolors.ENDC)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+if len(gg) != 0:
+	print(bcolors.OKCYAN + "\n----------------------------------------\n" + bcolors.ENDC)
+	print(bcolors.UNDERLINE + bcolors.BOLD + bcolors.FAIL + "XSS flaws founds:" + bcolors.ENDC)
+	for url in gg:
+		print(url.replace('//', '/'))
