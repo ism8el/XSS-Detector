@@ -4,7 +4,7 @@ An XSS website vulnerability scanner coded in Python3
 This is a Python script that detects XSS flaws on your web pages.\
 It is very easy to use.
 
-## Pythom modules requierements:
+## Python modules requierements:
 * re
 * requests
 * sys
